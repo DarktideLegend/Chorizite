@@ -8,12 +8,13 @@ local MemoryStream = CS.System.IO.MemoryStream
 local hex = function(number) return string.format("0x%08X", number) end
 local json = require('json')
 
+
 local ClientState = CS.Core.AC.API.ClientState
 
 local state = rx:CreateState({
-    items = { { ListingId = 1, Info = "Test" } },
+	items = { { ListingId = 1, Info = "Test" } },
     searchTerm = "",
-    loading = true,
+	loading = true,
 })
 
 local OpCodeHandlers = {
@@ -81,7 +82,7 @@ local BrowseItems = function(state)
         return ret
     end)
 end
-
+	
 local BrowseAuctionView = function(state)
   return rx:Div({ class = "auction-browse", onMount = function () onMount() end }, {
       BrowseHeader(state),
