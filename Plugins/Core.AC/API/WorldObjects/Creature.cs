@@ -26,7 +26,7 @@ namespace Core.AC.API.WorldObjects {
         /// <summary>
         /// The creature's equipment
         /// </summary>
-        public List<Equippable> Equipment { get; set; } = [];
+        public List<Equipment> Equipment { get; set; } = [];
 
         /// <summary>
         /// The stance the weenie is in, only applies to creatures.
@@ -66,10 +66,5 @@ namespace Core.AC.API.WorldObjects {
                 }
             }
         }
-
-        /// <summary>
-        /// The creature's level
-        /// </summary>
-        public int Level => Value(PropertyInt.Level);
     }
 }

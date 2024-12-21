@@ -6,7 +6,8 @@ using System.Text.Json.Serialization;
 
 namespace Core.AC.API {
     public class VitalInfo {
-        private Character character => CoreACPlugin.Instance.Game.Character;
+        private WorldObject _weenie;
+        private int _current;
         private SkillFormula _formula;
 
         /// <summary>
@@ -66,20 +67,23 @@ namespace Core.AC.API {
         [JsonIgnore]
         public virtual int Base {
             get {
-                var _base = (int)(InitLevel + PointsRaised);
-                // todo: health ratings from gear
-                if (Formula.UseFormula) {
-                    var attrBonus = character.Attributes[Formula.Attribute1].Base;
-                    if (Formula.Attribute1 == AttributeId.Endurance) {
-                        attrBonus += 1;
-                    }
-                    if (Formula.Attribute2 != 0) {
-                        attrBonus += character.Attributes[Formula.Attribute2].Base;
-                    }
+                if (_weenie is Character character) {
+                    var _base = (int)(InitLevel + PointsRaised);
+                    // todo: health ratings from gear
+                    if (Formula.UseFormula) {
+                        var attrBonus = character.Attributes[Formula.Attribute1].Base;
+                        if (Formula.Attribute1 == AttributeId.Endurance) {
+                            attrBonus += 1;
+                        }
+                        if (Formula.Attribute2 != 0) {
+                            attrBonus += character.Attributes[Formula.Attribute2].Base;
+                        }
 
-                    _base += (int)Math.Round(((float)attrBonus / Formula.Divisor));
+                        _base += (int)Math.Round(((float)attrBonus / Formula.Divisor));
+                    }
+                    return _base;
                 }
-                return _base;
+                return (int)InitLevel + (int)PointsRaised;
             }
         }
 
@@ -89,55 +93,58 @@ namespace Core.AC.API {
         [JsonIgnore]
         public virtual int Max {
             get {
-                // logic from ACE
-                var max = (int)(InitLevel + PointsRaised);
-                if (Type == VitalId.Health) {
-                    if (character.Value(PropertyInt.Enlightenment) > 0)
-                        max += character.Value(PropertyInt.Enlightenment) * 2;
-                    max += character.Value(PropertyInt.GearMaxHealth);
-                }
-
-                if (Formula.UseFormula) {
-                    var attrBonus = character.Attributes[Formula.Attribute1].Current;
-                    if (Formula.Attribute2 != 0) {
-                        attrBonus += character.Attributes[Formula.Attribute2].Current;
+                if (_weenie is Character character) {
+                    // logic from ACE
+                    var max = (int)(InitLevel + PointsRaised);
+                    if (Type == VitalId.Health) {
+                        if (_weenie.Value(PropertyInt.Enlightenment) > 0)
+                            max += _weenie.Value(PropertyInt.Enlightenment) * 2;
+                        max += character.Value(PropertyInt.GearMaxHealth);
                     }
 
-                    max += (int)Math.Floor(((float)attrBonus / Formula.Divisor) + 0.5f);
+                    if (Formula.UseFormula) {
+                        var attrBonus = character.Attributes[Formula.Attribute1].Current;
+                        if (Formula.Attribute2 != 0) {
+                            attrBonus += character.Attributes[Formula.Attribute2].Current;
+                        }
+
+                        max += (int)Math.Floor(((float)attrBonus / Formula.Divisor) + 0.5f);
+                    }
+
+                    var multiplier = character.GetEnchantmentsMultiplierModifier(Type);
+                    var fTotal = max * multiplier;
+
+                    if (character.Vitae < 1.0f && character.Vitae > 0.0f) {
+                        fTotal *= character.Vitae;
+                    }
+
+                    var additives = character.GetEnchantmentsAdditiveModifier(Type);
+                    var iTotal = (int)Math.Floor(fTotal + (float)additives + 0.5f);
+                    var minVital = max >= 5 ? 5 : 1;
+
+                    iTotal = Math.Max(minVital, iTotal);
+
+                    return iTotal;
                 }
-
-                var multiplier = character.GetEnchantmentsMultiplierModifier(Type);
-                var fTotal = max * multiplier;
-
-                if (character.Vitae < 1.0f && character.Vitae > 0.0f) {
-                    fTotal *= character.Vitae;
-                }
-
-                var additives = character.GetEnchantmentsAdditiveModifier(Type);
-                var iTotal = (int)Math.Floor(fTotal + (float)additives + 0.5f);
-                var minVital = max >= 5 ? 5 : 1;
-
-                iTotal = Math.Max(minVital, iTotal);
-
-                return iTotal;
+                return 0;
             }
         }
 
         /// <summary>
         /// The current value of this vital
         /// </summary>
-        public int Current { get; set; }
-
-        public VitalInfo() {
-            
+        public virtual int Current {
+            get => _current;
+            set {
+                _current = value;
+            }
         }
 
-        internal VitalInfo(VitalId vitalId) {
+        public VitalInfo() { }
+
+        internal VitalInfo(VitalId vitalId, WorldObject weenie) {
             Type = vitalId;
-        }
-
-        public override string ToString() {
-            return $"[Vital: {Type}, Base: {Base}, Max: {Max}, Current: {Current}]";
+            _weenie = weenie;
         }
     }
 }

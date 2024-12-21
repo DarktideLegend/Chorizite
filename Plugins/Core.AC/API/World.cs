@@ -3,13 +3,13 @@ using Chorizite.ACProtocol.Messages.S2C.Events;
 using Chorizite.ACProtocol.Types;
 using Chorizite.Common;
 using Chorizite.Common.Enums;
-using Chorizite.Core.Backend;
 using Chorizite.Core.Net;
 using Core.AC.API.WorldObjects;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
+using System.Linq;
 
 namespace Core.AC.API {
     /// <summary>
@@ -28,12 +28,6 @@ namespace Core.AC.API {
         /// The container that is currently open, if any
         /// </summary>
         public Container? OpenContainer { get; set; }
-
-        /// <summary>
-        /// The currently selected world object, if any
-        /// </summary>
-        [JsonIgnore]
-        public WorldObject? Selected => CoreACPlugin.Instance.Game.World.Get(CoreACPlugin.Instance.ClientBackend.SelectedObjectId);
 
         /// <summary>
         /// Fired when a new world object is created
@@ -70,16 +64,6 @@ namespace Core.AC.API {
             remove => _OnContainerClosed.Unsubscribe(value);
         }
         private WeakEvent<ContainerClosedEventArgs> _OnContainerClosed = new();
-
-        /// <summary>
-        /// Fired when the selected world object changes
-        /// </summary>
-        public event EventHandler<WorldObjectSelectedEventArgs> OnSelectionChanged {
-            add => _OnSelectionChanged.Subscribe(value);
-            remove => _OnSelectionChanged.Unsubscribe(value);
-        }
-        private WeakEvent<WorldObjectSelectedEventArgs> _OnSelectionChanged = new();
-
 
         public World() {
             _log = CoreACPlugin.Log;
@@ -129,25 +113,9 @@ namespace Core.AC.API {
             _net.S2C.OnQualities_UpdateSkillLevel += OnQualities_UpdateSkillLevel_S2C;
             _net.S2C.OnQualities_UpdateSkill += OnQualities_UpdateSkill_S2C;
             _net.S2C.OnQualities_UpdateString += OnQualities_UpdateString_S2C;
-
-            CoreACPlugin.Instance.ClientBackend.OnObjectSelected += OnObjectSelected;
         }
 
         #region public API
-        /// <summary>
-        /// Try to get a world object by id
-        /// </summary>
-        /// <param name="objectId"></param>
-        /// <returns></returns>
-        public WorldObject? this[uint objectId] {
-            get => Get(objectId);
-        }
-
-        /// <summary>
-        /// Try to get a world object by id
-        /// </summary>
-        /// <param name="objectId"></param>
-        /// <returns></returns>
         public WorldObject? Get(uint objectId) {
             if (Weenies.TryGetValue(objectId, out WorldObject? weenie)) {
                 return weenie;
@@ -155,23 +123,9 @@ namespace Core.AC.API {
 
             return null;
         }
-
-        /// <summary>
-        /// Check if a world object exists
-        /// </summary>
-        /// <param name="objectId"></param>
-        /// <returns></returns>
-        public bool Exists(uint objectId) => Weenies.ContainsKey(objectId);
         #endregion // public API
 
         #region Event Handlers
-        private void OnObjectSelected(object? sender, ObjectSelectedEventArgs e) {
-            var eventArgs = new WorldObjectSelectedEventArgs(Get(e.ObjectId));
-
-            _OnSelectionChanged.Invoke(this, eventArgs);
-            e.Eat = e.Eat || eventArgs.Eat;
-        }
-
         private void OnItem_CreateObject(object? sender, Item_CreateObject e) {
             WorldObject? weenie = null;
 
@@ -272,8 +226,8 @@ namespace Core.AC.API {
 
         private void OnItem_ServerSaysContainId(object? sender, Item_ServerSaysContainId e) {
             var weenie = Get(e.ObjectId);
-            if (weenie is null || weenie is not Item item) {
-                _log.LogWarning($"Could not find Item weenie 0x{e.ObjectId:X8} ({weenie}) to OnItem_ServerSaysContainId");
+            if (weenie is null) {
+                _log.LogWarning($"Could not find weenie 0x{e.ObjectId:X8} to update Item_ServerSaysContainId");
                 return;
             }
 
@@ -283,16 +237,16 @@ namespace Core.AC.API {
                 return;
             }
 
-            MoveWeenie(item, newParent, (int)e.SlotIndex);
+            MoveWeenie(weenie, newParent, (int)e.SlotIndex);
         }
 
         private void OnItem_ServerSaysMoveItem(object? sender, Item_ServerSaysMoveItem e) {
             var weenie = Get(e.ObjectId);
-            if (weenie is null || weenie is not Item item) {
-                _log.LogWarning($"Could not find Item weenie 0x{e.ObjectId:X8} ({weenie}) to OnItem_ServerSaysMoveItem");
+            if (weenie is null) {
+                _log.LogWarning($"Could not find weenie 0x{e.ObjectId:X8} to update Item_ServerSaysMoveItem");
                 return;
             }
-            MoveWeenie(item, null, 0);
+            MoveWeenie(weenie, null, 0);
         }
 
         private void OnItem_ServerSaysRemove(object? sender, Item_ServerSaysRemove e) {
@@ -326,10 +280,8 @@ namespace Core.AC.API {
             weenie.UpdateStatsTable(e.IntProperties);
             weenie.UpdateStatsTable(e.StringProperties);
             weenie.UpdateStatsTable(e.DataIdProperties);
-            if (weenie is Item item) {
-                item.UpdateSpells(e.SpellBook);
-            }
-            weenie.LastAppraisalTime = DateTime.Now;
+            weenie.UpdateSpells(e.SpellBook);
+            weenie.LastAppraisalTime = DateTime.UtcNow;
             weenie.HasAppraisalData = true;
         }
 
@@ -352,7 +304,7 @@ namespace Core.AC.API {
             weenie.UpdateWeenieDesc(e.WeenieDesc);
             weenie.UpdateObjDesc(e.ObjectDesc);
             weenie.UpdatePhysicsDesc(e.PhysicsDesc);
-            weenie.LastAccessTime = DateTime.Now;
+            weenie.LastAccessTime = DateTime.UtcNow;
         }
 
         private void OnItem_UpdateStackSize(object? sender, Item_UpdateStackSize e) {
@@ -367,12 +319,12 @@ namespace Core.AC.API {
 
         private void OnItem_WearItem(object? sender, Item_WearItem e) {
             var weenie = Get(e.ObjectId);
-            if (weenie is null || weenie is not Item item) {
-                _log.LogWarning($"Could not find Item weenie 0x{e.ObjectId:X8} ({weenie}) to Item_WearItem");
+            if (weenie is null) {
+                _log.LogWarning($"Could not find weenie 0x{e.ObjectId:X8} to Item_WearItem");
                 return;
             }
 
-            MoveWeenie(item, null, 0);
+            MoveWeenie(weenie, null, 0);
             CoreACPlugin.Instance.Game.Character.SetWielded(weenie, e.Slot);
         }
 
@@ -382,7 +334,7 @@ namespace Core.AC.API {
                 _log.LogWarning($"Could not find weenie 0x{e.ObjectId:X8} to Item_QueryItemManaResponse");
                 return;
             }
-            weenie.LastAccessTime = DateTime.Now;
+            weenie.LastAccessTime = DateTime.UtcNow;
         }
 
         private void OnQualities_RemoveBoolEvent(object? sender, Qualities_RemoveBoolEvent e) {
@@ -595,7 +547,7 @@ namespace Core.AC.API {
 
         internal WorldObject GetOrCreateWorldObject(uint objectId, ObjDesc objectDescription, PhysicsDesc physicsDescription, PublicWeenieDesc weenieDescription) {
             if (Weenies.TryGetValue(objectId, out WorldObject? weenie)) {
-                weenie.LastAccessTime = DateTime.Now;
+                weenie.LastAccessTime = DateTime.UtcNow;
             }
 
             if (weenie is null) {
@@ -609,8 +561,8 @@ namespace Core.AC.API {
             var container = new Container();
             container.Id = objectId;
             container.ContainerType = containerProperties;
-            container.LastAccessTime = DateTime.Now;
-            container.CreatedAt = DateTime.Now;
+            container.LastAccessTime = DateTime.UtcNow;
+            container.CreatedAt = DateTime.UtcNow;
             Weenies.TryAdd(objectId, container);
             return container;
         }
@@ -623,98 +575,28 @@ namespace Core.AC.API {
                 case ObjectClass.Player:
                     wobject = new Player();
                     break;
-                case ObjectClass.Door:
-                    wobject = new Door();
-                    break;
-                case ObjectClass.Portal:
-                    wobject = new Portal();
-                    break;
-                case ObjectClass.Gem:
-                    wobject = new Gem();
-                    break;
-                case ObjectClass.Armor:
-                    wobject = new Armor();
-                    break;
-                case ObjectClass.WandStaffOrb:
-                    wobject = new Wand();
-                    break;
-                case ObjectClass.MissileWeapon:
-                    wobject = new MissileWeapon();
-                    break;
-                case ObjectClass.MeleeWeapon:
-                    wobject = new MeleeWeapon();
-                    break;
-                case ObjectClass.Clothing:
-                    wobject = new Clothing();
-                    break;
-                case ObjectClass.Jewelry:
-                    wobject = new Jewelry();
-                    break;
-                case ObjectClass.SpellComponent:
-                    wobject = new SpellComponent();
-                    break;
-                case ObjectClass.Ust:
-                    wobject = new Ust();
-                    break;
                 case ObjectClass.Npc:
-                    wobject = new NPC();
-                    break;
                 case ObjectClass.Vendor:
-                    wobject = new Vendor();
-                    break;
-                case ObjectClass.Monster:
-                    wobject = new Monster();
+                    wobject = new NPC();
                     break;
                 case ObjectClass.Container:
                     wobject = new Container();
                     break;
-                case ObjectClass.Food:
-                    wobject = new Food();
-                    break;
-                case ObjectClass.Bindstone:
-                    wobject = new Bindstone();
-                    break;
-                case ObjectClass.Static:
-                    wobject = new Static();
-                    break;
-                case ObjectClass.Key:
-                    wobject = new Key();
-                    break;
-                case ObjectClass.ManaStone:
-                    wobject = new ManaStone();
-                    break;
-                case ObjectClass.Corpse:
-                    wobject = new Corpse();
-                    break;
-                case ObjectClass.Scroll:
-                    wobject = new Scroll();
-                    break;
-                case ObjectClass.TradeNote:
-                    wobject = new TradeNote();
-                    break;
-                case ObjectClass.Foci:
-                    wobject = new Foci();
-                    break;
                 default:
-                    if (weenieDescription.Behavior.HasFlag(Chorizite.ACProtocol.Enums.ObjectDescriptionFlag.Stuck)) {
-                        wobject = new Static();
-                    }
-                    else {
-                        wobject = new Item();
-                    }
+                    wobject = new WorldObject();
                     break;
             }
 
             wobject.Id = objectId;
-            wobject.LastAccessTime = DateTime.Now;
-            wobject.CreatedAt = DateTime.Now;
+            wobject.LastAccessTime = DateTime.UtcNow;
+            wobject.CreatedAt = DateTime.UtcNow;
 
             Weenies.TryAdd(objectId, wobject);
 
             return wobject;
         }
 
-        private void MoveWeenie(Item weenie, Container? newParent, int slot) {
+        private void MoveWeenie(WorldObject weenie, Container? newParent, int slot) {
             if (weenie is Container childContainer) {
                 weenie.ParentContainer?.Containers.Remove(childContainer);
                 if (newParent is not null) {
@@ -736,19 +618,15 @@ namespace Core.AC.API {
                 return;
 
             if (Weenies.Remove(weenieId, out WorldObject? weenieToRemove)) {
-                if (!(weenieToRemove is Item itemToRemove)) {
-                    _log.LogWarning($"Could not find item weenie 0x{weenieId:X8} ({weenieToRemove}) to RemoveWeenie");
-                    return;
-                }
                 // try update containers of parent
-                if (itemToRemove.ParentContainer is not null) {
-                    _log.LogTrace($"Scripts_RemoveWeenie: {itemToRemove} ({itemToRemove.ParentContainer.ContainerType}) // from {itemToRemove.ParentContainer}");
+                if (weenieToRemove.ParentContainer is not null) {
+                    _log.LogTrace($"Scripts_RemoveWeenie: {weenieToRemove} ({weenieToRemove.ParentContainer.ContainerType}) // from {weenieToRemove.ParentContainer}");
 
-                    if (itemToRemove is Container containerToRemove) {
-                        itemToRemove.ParentContainer.Containers.Remove(containerToRemove);
+                    if (weenieToRemove is Container containerToRemove) {
+                        weenieToRemove.ParentContainer.Containers.Remove(containerToRemove);
                     }
                     else {
-                        itemToRemove.ParentContainer.Items.Remove(weenieToRemove);
+                        weenieToRemove.ParentContainer.Items.Remove(weenieToRemove);
                     }
                 }
 
@@ -760,7 +638,7 @@ namespace Core.AC.API {
                 }
 
                 // remove equipment from wielder
-                if (weenieToRemove is Equippable equipment) {
+                if (weenieToRemove is Equipment equipment) {
                     equipment.Wielder?.Equipment.Remove(equipment);
                 }
 
@@ -814,8 +692,6 @@ namespace Core.AC.API {
             _net.S2C.OnQualities_UpdateSkillLevel -= OnQualities_UpdateSkillLevel_S2C;
             _net.S2C.OnQualities_UpdateSkill -= OnQualities_UpdateSkill_S2C;
             _net.S2C.OnQualities_UpdateString -= OnQualities_UpdateString_S2C;
-
-            CoreACPlugin.Instance.ClientBackend.OnObjectSelected -= OnObjectSelected;
         }
     }
 }

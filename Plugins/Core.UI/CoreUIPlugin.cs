@@ -22,7 +22,6 @@ using Core.UI.Lib.RmlUi.VDom;
 using System.Xml.Linq;
 using System.Linq;
 using Cortex.Net;
-using Chorizite.Core.Input;
 
 namespace Core.UI {
     /// <summary>
@@ -103,18 +102,9 @@ namespace Core.UI {
             Backend.Renderer.OnRender2D += Renderer_OnRender2D;
             Backend.Renderer.OnGraphicsPostReset += Renderer_OnGraphicsPostReset;
 
-            Backend.Input.OnKeyDown += Input_OnKeyDown;
-
             //_panel = RegisterPanel("Test", Path.Combine(AssemblyDirectory, "assets", "panels", "Test.rml"));
             //_panel.OnAfterReload += Panel_OnAfterReload;
             //MakeReactive();
-        }
-
-        private void Input_OnKeyDown(object? sender, KeyDownEventArgs e) {
-            if (e.Key == Key.KEY_D && Backend.Input.IsKeyPressed(Key.CONTROL)) {
-                e.Eat = true;
-                ToggleDebugger();
-            }
         }
 
         private void Panel_OnAfterReload(object? sender, EventArgs e) {
@@ -175,7 +165,6 @@ namespace Core.UI {
         }
 
         public static int TaskCount = 0;
-        internal bool _isTogglingDebugger;
 
         private class MyEnhancer : IEnhancer {
             public T Enhance<T>(T newValue, T originalValue, string name) {
@@ -406,7 +395,6 @@ namespace Core.UI {
         internal void ToggleDebugger() {
             if (!_didInitRml || RmlContext is null) return;
 
-            _isTogglingDebugger = true;
             if (_isDebugging) {
                 Debugger.SetVisible(false);
                 Debugger.Shutdown();
@@ -417,7 +405,6 @@ namespace Core.UI {
                 Debugger.SetVisible(true);
                 _isDebugging = true;
             }
-            _isTogglingDebugger = false;
         }
 
         private void InitRmlUI() {
@@ -464,6 +451,7 @@ namespace Core.UI {
 
 
                     _didInitRml = true;
+                    ToggleDebugger();
 
                     Rml.RegisterPlugin(_themePlugin);
 
@@ -572,8 +560,6 @@ namespace Core.UI {
                 Backend.Renderer.OnGraphicsPostReset -= Renderer_OnGraphicsPostReset;
                 Backend.Renderer.OnRender2D -= Renderer_OnRender2D;
                 OnScreenChanged -= CoreUIPlugin_OnScreenChanged;
-
-                Backend.Input.OnKeyDown -= Input_OnKeyDown;
 
                 PanelManager.Dispose();
                 PluginManager.OnPluginUnloaded -= PluginManager_OnPluginUnloaded;
