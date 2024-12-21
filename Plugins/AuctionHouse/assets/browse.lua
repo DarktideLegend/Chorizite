@@ -60,6 +60,10 @@ local BrowseSearch = function (state)
     })
 end
 
+local BrowseSearch = function (state) 
+    return rx:Input({ type = "text", placeholder = "Serach items", class = "browse-search", value = state.searchTerm })
+end
+
 local BrowseLoader = function () 
     return rx:Div("Loading...")
 end
