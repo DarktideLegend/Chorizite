@@ -22,6 +22,14 @@ namespace Core.UI.Lib.RmlUi.VDom {
         private List<Action<Event>> _eventHandlers = [];
         private ScriptableDocumentElement _docEl;
 
+        private readonly HashSet<string> _lifecycleEvents = new HashSet<string>() {
+        "onUpdate",
+        "onMount",
+        "onDispose"
+
+    };
+        private bool _hasMounted = false;
+
         public string Type { get; set; }
         public Dictionary<string, object> Props { get; set; }
         public List<VirtualNode> Children { get; } = [];
@@ -88,6 +96,9 @@ namespace Core.UI.Lib.RmlUi.VDom {
                 CoreUIPlugin.Log.LogWarning($"Element is null, skipping prop update on {ToString()}: {key}={value}");
                 return;
             }
+
+            if (_lifecycleEvents.Contains(key))
+                return;
 
             if (value is string stringValue) {
                 if (!string.IsNullOrEmpty(stringValue)) {
@@ -193,6 +204,15 @@ namespace Core.UI.Lib.RmlUi.VDom {
                 var childEl = Element.DocEl.AppendChildTag(child.Type);
                 child.UpdateElement(childEl);
             }
+
+            // Trigger onUpdate lifecycle event
+            if (_hasMounted)
+                TryInvokeLifecycleEvent("onUpdate", Element);
+
+            // Trigger onMount lifecycle event
+            if (!_hasMounted && TryInvokeLifecycleEvent("onMount", Element)) {
+                _hasMounted = true; 
+            }
         }
 
         public override string ToString() {
@@ -205,6 +225,49 @@ namespace Core.UI.Lib.RmlUi.VDom {
                 child.Dispose();
             }
             Children.Clear();
+
+            // Trigger onDispose lifecycle event
+            TryInvokeLifecycleEvent("onDispose");
         }
+
+        private bool TryInvokeLifecycleEvent(string eventName, params object[] args) {
+            if (Props.TryGetValue(eventName, out var eventHandler)) {
+                try {
+                    switch (eventHandler) {
+                        case Action action:
+                            if (args.Length == 0) {
+                                action.Invoke();
+                            }
+                            else {
+                                throw new InvalidOperationException($"The event handler for {eventName} expects no arguments.");
+                            }
+                            break;
+
+                        case LuaFunction luaFunction:
+                            luaFunction.Call(args);
+                            break;
+
+                        case Delegate genericDelegate:
+                            genericDelegate.DynamicInvoke(args);
+                            break;
+
+                        default:
+                            throw new InvalidOperationException($"Unsupported lifecycle event handler type for {eventName}");
+                    }
+
+                    return true; 
+                }
+                catch (Exception ex) {
+                    // Handle or log the exception if necessary
+                    Console.WriteLine($"Error invoking lifecycle event '{eventName}': {ex.Message}");
+                    return false;
+                }
+            }
+
+            return false; 
+        }
+
+
     }
 }
+
