@@ -357,6 +357,14 @@ local PostFormTitle = function(state)
   })
 end
 
+local PostFormError = function(state) 
+  return rx:Div({ class = "post-form-item-container" }, {
+    rx:Div({ class = "post-form-item" }, {
+      rx:Div({ class = "post-form-error" }, state.dragError),
+    })
+  })
+end
+
 local PostForm = function(state)
   return rx:Div({ class = "post-form" }, {
     rx:Div({ class = {
