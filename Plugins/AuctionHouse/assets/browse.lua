@@ -8,7 +8,6 @@ local MemoryStream = CS.System.IO.MemoryStream
 local hex = function(number) return string.format("0x%08X", number) end
 local json = require('json')
 
-
 local ClientState = CS.Core.AC.API.ClientState
 
 local state = rx:CreateState({
