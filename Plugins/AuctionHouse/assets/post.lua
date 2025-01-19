@@ -97,7 +97,6 @@ local state = rx:CreateState({
   end,
   SetMaximumStackSize = function(self)
     local wobject = ac.World:Get(self.selectedId)
-    print(self.selectedId)
     if wobject == nil or not wobject.IsStackable then return end
     local stackSize = math.min(wobject:Value(PropertyInt.StackSize), wobject:Value(PropertyInt.MaxStackSize))
     self.stackSize = stackSize
