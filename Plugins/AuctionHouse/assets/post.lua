@@ -357,11 +357,17 @@ local PostFormTitle = function(state)
   })
 end
 
-local PostFormError = function(state) 
-  return rx:Div({ class = "post-form-item-container" }, {
-    rx:Div({ class = "post-form-item" }, {
-      rx:Div({ class = "post-form-error" }, state.dragError)
-    })
+local PostAuctionError = function(state) 
+  return rx:Div({
+    rx:Div({ class = "post-auction-error" }, state.dragError)
+  })
+end
+
+local PostFormTitle = function(state) 
+  return rx:Div({ class = {
+    ["post-form-title"] = true,
+  }}, {
+    rx:H4("Create a Sell Order")
   })
 end
 
