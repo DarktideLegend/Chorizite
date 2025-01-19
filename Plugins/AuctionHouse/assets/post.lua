@@ -358,7 +358,7 @@ end
 
 local PostAuctionError = function(state) 
   return rx:Div({
-    rx:Div({ class = "post-auction-error" }, state.dragError)
+    rx:Div({ class = "post-auction-error" }, state.dragError or state.auctionError)
   })
 end
 
