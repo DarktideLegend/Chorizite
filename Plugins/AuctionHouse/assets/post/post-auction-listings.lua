@@ -2,6 +2,7 @@ local rx = require("rx")
 local request = require("request")
 local Net = require(typeof(CS.Chorizite.Core.Net.NetworkParser))
 local ac = require('Plugins.Core.AC').Game
+local utils = require('utils')
 
 local state = rx:CreateState({
   loading = true,
@@ -45,7 +46,7 @@ local state = rx:CreateState({
 
     self.sortDirection = self[columnDirectionKey]
     self.listings = nil
-    request.FetchPostListings(self.searchQuery, self.sortDirection, self.sortColumn)
+    request.fetchPostListings(self.searchQuery, self.sortDirection, self.sortColumn)
   end,
   HandleGetListingsResponse = function(self, response)
     self.loading = false;
@@ -57,6 +58,20 @@ local state = rx:CreateState({
   end
 })
 
+function convertUserDataToTable(userData)
+  local result = {}
+
+  -- Check if the userdata is a System.Object[] (array)
+  if userData.GetType():ToString() == "System.Object[]" then
+    -- Convert each element in the array to a Lua table
+    for i = 0, userData.Length - 1 do
+      table.insert(result, userData[i]) -- Insert each element into the result table
+    end
+  end
+
+  return result
+end
+
 local OpCodeHandlers = {
   [0x10004] = function(evt)
     print("-> GetListingsResponse Event Handler")
@@ -65,9 +80,8 @@ local OpCodeHandlers = {
   end
 }
 
-
 local onMount = function()
-  request.FetchPostListings("", 1, "name")
+  request.fetchPostListings("", 1, "name")
   Net.Messages:OnUnknownMessage('+', function(sender, evt)
     if OpCodeHandlers[evt.OpCode] then
       OpCodeHandlers[evt.OpCode](evt)

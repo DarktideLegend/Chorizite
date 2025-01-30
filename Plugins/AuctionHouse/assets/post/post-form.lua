@@ -91,7 +91,7 @@ local state = rx:CreateState({
     self.loading = false
     if response.Success then
       self.ClearPostForm()
-      request.FetchPostListings("", 1, "name")
+      request.fetchPostListings("", 1, "name")
     else
       self.auctionError = response.ErrorMessage
     end
@@ -304,7 +304,7 @@ local PostFormSubmit = function(state)
     rx:Div({ class = "post-form-item" }, {
       rx:Button({
         class = "primary post-form-submit",
-        onclick = function(evt) state:CreateSellOrder() end
+        onclick = function(evt) state:createSellOrder() end
       }, "Create Auction")
     })
   })

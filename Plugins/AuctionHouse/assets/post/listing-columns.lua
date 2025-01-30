@@ -1,4 +1,4 @@
-local listingColumnEnumMap = {
+local listingColumnsEnumMap = {
   name = 1,         -- ListingColumn.Name
   stackSize = 2,    -- ListingColumn.StackSize
   buyoutPrice = 3,  -- ListingColumn.BuyoutPrice
@@ -9,5 +9,5 @@ local listingColumnEnumMap = {
 }
 
 return {
-  listingColumnEnumMap = listingColumnEnumMap
+  listingColumnsEnumMap = listingColumnsEnumMap,
 }
