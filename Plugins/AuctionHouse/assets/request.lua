@@ -1,5 +1,5 @@
 local backend = require('ClientBackend')
-local listingColumns = require('listing-columns')
+local postConstants = require('post-constants')
 local json = require('json')
 local utils = require('utils')
 local BinaryReader = CS.System.IO.BinaryReader
@@ -42,11 +42,13 @@ request.read = function(rawData)
   return response
 end
 
-request.fetchPostListings = function(searchQuery, sortDirection, sortColumn)
+request.fetchPostListings = function(searchQuery, sortDirection, sortColumn, pageNumber, pageSize)
   local fetchPostListingsRequest = {
     SearchQuery = searchQuery,
-    SortBy = utils.getEnumRepresentation(listingColumns.listingColumnsEnumMap, sortColumn),
-    SortDirection = sortDirection
+    SortBy = utils.getEnumRepresentation(postConstants.listingColumnsEnumMap, sortColumn),
+    SortDirection = sortDirection,
+    PageNumber = pageNumber,
+    PageSize = pageSize
   }
   write(0x10003, {
     Data = fetchPostListingsRequest

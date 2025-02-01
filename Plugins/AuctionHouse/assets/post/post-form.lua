@@ -17,6 +17,7 @@ local state = rx:CreateState({
   selectedCurrencyName = nil,
   selectedCurrencyWcid = 0,
   listings = nil,
+  pageSize = 25,
   stackSize = 1,
   stackCount = 1,
   startingPrice = 1,
@@ -91,7 +92,7 @@ local state = rx:CreateState({
     self.loading = false
     if response.Success then
       self.ClearPostForm()
-      request.fetchPostListings("", 1, "name")
+      request.fetchPostListings("", 1, "name", 1, 10)
     else
       self.auctionError = response.ErrorMessage
     end
@@ -169,10 +170,12 @@ local PostFormItemStackSize = function(state)
         class = "secondary",
         disabled = not state.canStack,
         onclick = function(evt) state:SetMaximumStackSize() end
-      }, "Maximum"),
+      }, "Max"),
     })
   })
 end
+
+
 
 local PostFormItemStacks = function(state)
   return rx:Div({ class = "post-form-item-container" }, {
@@ -184,12 +187,7 @@ local PostFormItemStacks = function(state)
         onChange = function(evt) state.stackCount = tonumber(evt.Params.value) end,
         value = state.stackCount,
         disabled = not state.canStack
-      }),
-      rx:Button({
-        class = "secondary",
-        disabled = not state.canStack,
-        onClick = function(evt) state:SetMaximumStackCount() end
-      }, "Maximum"),
+      })
     })
   })
 end
