@@ -19,6 +19,7 @@ local state = rx:CreateState({
   sortStartPriceDirection = 1,
   sortSellerDirection = 1,
   sortCurrencyDirection = 1,
+  sortDuration = 1,
   searchQuery = "",
   UpdateSortState = function(self, column)
     self.loading = true
@@ -29,7 +30,8 @@ local state = rx:CreateState({
       buyoutPrice = "sortBuyoutPriceDirection",
       startPrice = "sortStartPriceDirection",
       seller = "sortSellerDirection",
-      currency = "sortCurrencyDirection"
+      currency = "sortCurrencyDirection",
+      duration = "sortDuration"
     }
 
     local columnDirectionKey = columnDirectionMap[column]
@@ -47,9 +49,15 @@ local state = rx:CreateState({
       error("Invalid sort direction. Direction must be either 1 (ascending) or 2 (descending).")
     end
 
+
     self.sortDirection = self[columnDirectionKey]
     self.pageNumber = 1
-    request.fetchPostListings(self.searchQuery, self.sortDirection, self.sortColumn, self.pageNumber, self.pageSize)
+    request.fetchPostListings(
+      self.searchQuery,
+      self.sortDirection,
+      self.sortColumn,
+      self.pageNumber,
+      self.pageSize)
   end,
   HandleGetPostListingsResponse = function(self, response)
     self.listings = nil;
@@ -80,14 +88,21 @@ local state = rx:CreateState({
   HandleListingsSearch = function(self, searchQuery)
     self.searchQuery = searchQuery;
     request.fetchPostListings(searchQuery, self.sortDirection, self.sortColumn, self.pageNumber, self.pageSize)
+  end,
+  HandleInboxNotificationReponse = function(self)
+    request.fetchPostListings(self.searchQuery, self.sortDirection, self.sortColumn, self.pageNumber, self.pageSize)
   end
 })
 
 local OpCodeHandlers = {
   [0x10004] = function(evt)
-    print("-> GetPostListingsResponse Event Handler")
+    print("[PostAuctionListings] -> GetPostListingsResponse Event Handler")
     local getPostListingsResponse = request.read(evt.RawData)
     state.HandleGetPostListingsResponse(getPostListingsResponse)
+  end,
+  [0x10007] = function(evt)
+    print("[PostAuctionListings] -> InboxNotificationResponse Event Handler")
+    state.HandleInboxNotificationReponse()
   end
 }
 
@@ -102,12 +117,14 @@ local unknownMessageHandler = function(sender, evt)
 end
 
 local onMount = function()
+  Net.Messages:OnUnknownMessage('+', function(sender, evt)
+    if OpCodeHandlers[evt.OpCode] then
+      OpCodeHandlers[evt.OpCode](evt)
+    end
+  end)
   request.fetchPostListings("", 1, "name", state.pageNumber, state.pageSize)
-  Net.Messages:OnUnknownMessage('+', unknownMessageHandler)
 end
-local onUnmount = function()
-  Net.Messages:OnUnknownMessage('-', unknownMessageHandler)
-end
+
 
 local AuctionListingsTitle = function(state)
   return rx:Div({ class = "post-auction-listings-title" }, {
@@ -152,6 +169,7 @@ local AuctionListingsItem = function(item)
         rx:Div({ class = "post-auction-listings-item-name" }, item.CurrencyName),
       })
     }),
+    rx:Td(tostring(utils.timeRemaining(item.EndTime))),
   })
 end
 
@@ -237,6 +255,19 @@ local AuctionListingsList = function(state)
               rx:Div("Currency"),
               rx:Img({
                 sprite = state.sortCurrencyDirection == 1
+                    and "combo-up-arrow"
+                    or "combo-down-arrow"
+              }),
+            })
+          }),
+          rx:Td({
+            class = "post-auction-listings-header-item",
+            onClick = function() state.UpdateSortState("duration") end
+          }, {
+            rx:Div({ class = "post-auction-listings-header-item-container" }, {
+              rx:Div("Duration"),
+              rx:Img({
+                sprite = state.sortDuration == 1
                     and "combo-up-arrow"
                     or "combo-down-arrow"
               }),

@@ -14,17 +14,16 @@
               position: absolute;
               top: 206px;
               left: 37px;
-              width: 252px;
+              width: 160px;
               padding: 4px;
               height: 300px;
             }
 
             #panel li {
               display: block;
-              height: 28px;
-              line-height: 28px;
-              padding-left: 6px;
-              font-size: 14px;
+              height: 2.5rem;
+              padding-left: 0.5rem;
+              font-size: 1.2rem;
               font-effect: outline(1px black);
             }
 
@@ -33,9 +32,7 @@
               display: inline-block;
               text-align: center;
               width: 100px;
-              height: 30px;
-              line-height: 30px;
-              font-size: 18dp;
+              font-size: 1.5rem;
               font-effect: outline(2px black);
             }
 
@@ -45,24 +42,23 @@
 
             button#createcharacter {
               color: #ffff00;
-              top: 185px;
-              left: 315px;
+              top: 210px;
+              left: 243px;
               width: 220px;
-              height: 50px;
-              line-height: 50px;
-              font-size: 21dp;
+              line-height: 3.5rem;
+              font-size: 1.75rem;
               font-weight: bold;
             }
 
             button#enter {
       				display: block;
               decorator: image( dat://0x06004CB2 );
-              top: 290px;
-              left: 340px;
-              width: 211px;
-              height: 211px;
-              line-height: 210px;
-              font-size: 32dp;
+              top: 286px;
+              left: 238px;
+              width: 18rem;
+              height: 18rem;
+              line-height: 16.5rem;
+              font-size: 2.5rem;
               font-weight: bold;
             }
 
@@ -71,18 +67,21 @@
             }
 
             button#delete {
-              top: 522px;
-              left: 36px;
+              top: 548px;
+              left: 63px;
+              width: 120px;
             }
 
             button#credits {
-              top: 522px;
-              left: 465px;
+              top: 548px;
+              left: 490px;
+              width: 120px;
             }
 
             button#exit {
-              top: 522px;
-              left: 615px;
+              top: 548px;
+              left: 640px;
+              width: 120px;
             }
 
             span#world {

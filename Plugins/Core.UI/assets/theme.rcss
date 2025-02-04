@@ -299,11 +299,13 @@ scrollbarvertical sliderarrowinc:active {
 }
 
 button {
-	display: inline-block;
+	box-sizing: border-box;
 	cursor: 0x06004d69;
-	padding: 8px;
-	margin: 0px 2px;
+	display: inline-block;
 	text-align: center;
+	vertical-align: middle;
+	line-height: 1.5;
+	padding: 0.75rem;
 	decorator: ninepatch(button-primary, button-primary-inner);
   click-sound: 0x0A0003B3;
 	cursor: 0x06004d69;
@@ -322,7 +324,6 @@ button[disabled] {
 }
 
 button.secondary {
-	padding: 6px 8px 6px 8px;
 	decorator: ninepatch(button-secondary, button-secondary-inner);
 }
 

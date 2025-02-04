@@ -43,16 +43,26 @@ request.read = function(rawData)
 end
 
 request.fetchPostListings = function(searchQuery, sortDirection, sortColumn, pageNumber, pageSize)
+  print(sortColumn)
+  print(utils.getEnumRepresentation(postConstants.listingColumnEnumMap, sortColumn))
   local fetchPostListingsRequest = {
     SearchQuery = searchQuery,
     SortBy = utils.getEnumRepresentation(postConstants.listingColumnEnumMap, sortColumn),
     SortDirection = sortDirection,
     PageNumber = pageNumber,
-    PageSize = pageSize
+    PageSize = pageSize,
   }
   write(0x10003, {
     Data = fetchPostListingsRequest
   })
+end
+
+request.fetchInboxItems = function()
+  write(0x10005, {})
+end
+
+request.collectInboxItems = function()
+  write(0x10008, {})
 end
 
 request.createSellOrder = function(sellAuctionRequest)

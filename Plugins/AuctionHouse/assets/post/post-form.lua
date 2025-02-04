@@ -97,6 +97,31 @@ local state = rx:CreateState({
   end,
 })
 
+local onDragOver = utils.debounce(function(evt)
+  state.isDragging = true
+  state.allowDragging = evt.Params.IsSpell == false
+  state.dragError = ""
+
+  if not evt.Params.IsSpell then
+    local wobject = ac.World:Get(evt.Params.ObjectId)
+    if wobject.ObjectClass == ObjectClass.Container then
+      state.allowDragging = false
+      state.dragError = "Containers are not allowed on the Auction House"
+      return
+    elseif wobject.IsAttuned then
+      state.allowDragging = false
+      state.dragError = "Can't sell attuned items on the Auction House"
+      return
+    end
+  end
+end, 300)
+
+local onDragOut = utils.debounce(function()
+  state.isDragging = false
+  state.dragError = ""
+end, 300)
+
+
 local PostFormItemDrop = function(state)
   return rx:Div({ class = "post-form-item-container" }, {
     rx:H4("Auction Item"),
@@ -117,28 +142,8 @@ local PostFormItemDrop = function(state)
         state.selectedName = evt.Params.ObjectName
         state:SelectItem(state.selectedId)
       end,
-      ondragover = function(evt)
-        state.isDragging = true
-        state.allowDragging = evt.Params.IsSpell == false
-        state.dragError = ""
-
-        if not evt.Params.IsSpell then
-          local wobject = ac.World:Get(evt.Params.ObjectId)
-          if wobject.ObjectClass == ObjectClass.Container then
-            state.allowDragging = false
-            state.dragError = "Containers are not allowed on the Auction House"
-            return
-          elseif wobject.IsAttuned then
-            state.allowDragging = false
-            state.dragError = "Can't sell attuned items on the Auction House"
-            return
-          end
-        end
-      end,
-      ondragout = function(evt)
-        state.isDragging = false
-        state.dragError = ""
-      end
+      ondragover = onDragOver,
+      ondragout = onDragOut
     }, {
       rx:Div({ class = "icon-stack" }, {
         rx:Div({
@@ -320,9 +325,10 @@ local PostFormTitle = function(state)
   })
 end
 
+
 local OpCodeHandlers = {
   [0x10002] = function(evt)
-    print("-> CreateSellOrderResponse Event Handler")
+    print("[PostForm] -> CreateSellOrderResponse Event Handler")
     local sellOrderResponse = request.read(evt.RawData)
     state.HandleSellOrderResponse(sellOrderResponse)
   end
