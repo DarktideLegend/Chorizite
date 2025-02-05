@@ -94,16 +94,20 @@ local state = rx:CreateState({
   end
 })
 
+local onGetPostListingsResponse = utils.debounce(function(evt)
+  print("[PostAuctionListings] -> GetPostListingsResponse Event Handler")
+  local getPostListingsResponse = request.read(evt.RawData)
+  state.HandleGetPostListingsResponse(getPostListingsResponse)
+end, 500)
+
+local onInboxNotificationResponse = utils.debounce(function()
+  print("[PostAuctionListings] -> InboxNotificationResponse Event Handler")
+  state.HandleInboxNotificationReponse()
+end, 500)
+
 local OpCodeHandlers = {
-  [0x10004] = function(evt)
-    print("[PostAuctionListings] -> GetPostListingsResponse Event Handler")
-    local getPostListingsResponse = request.read(evt.RawData)
-    state.HandleGetPostListingsResponse(getPostListingsResponse)
-  end,
-  [0x10007] = function(evt)
-    print("[PostAuctionListings] -> InboxNotificationResponse Event Handler")
-    state.HandleInboxNotificationReponse()
-  end
+  [0x10004] = onGetPostListingsResponse,
+  [0x10007] = onInboxNotificationResponse
 }
 
 local onSearchChange = utils.debounce(function(evt)

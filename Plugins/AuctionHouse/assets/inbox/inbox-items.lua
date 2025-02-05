@@ -20,7 +20,7 @@ local state = rx:CreateState({
 local onInboxNotification = utils.debounce(function()
   print("[InboxItems] -> InboxNotificationResponse Event Handler")
   request.fetchInboxItems();
-end, 1000)
+end, 3000)
 
 local OpCodeHandlers = {
   [0x10006] = function(evt)
