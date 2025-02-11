@@ -57,12 +57,21 @@ request.fetchPostListings = function(searchQuery, sortDirection, sortColumn, pag
   })
 end
 
-request.fetchInboxItems = function()
-  write(0x10005, {})
+request.fetchInboxItems = function(pageSize, pageNumber)
+  write(0x10005, {
+    Data = {
+      PageSize = pageSize,
+      PageNumber = pageNumber
+    }
+  })
 end
 
-request.collectInboxItems = function()
-  write(0x10008, {})
+request.collectInboxItems = function(items)
+  write(0x10008, {
+    Data = {
+      InboxItems = items
+    }
+  })
 end
 
 request.createSellOrder = function(sellAuctionRequest)

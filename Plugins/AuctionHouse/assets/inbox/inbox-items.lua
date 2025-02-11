@@ -7,19 +7,51 @@ local utils = require('utils')
 local state = rx:CreateState({
   collectingInboxItems = false,
   items = nil,
+  pageSize = 5,
+  pageNumber = 1,
+  hasNextPage = true,
   HandleGetInboxItemsResponse = function(self, response)
     self.items = nil;
     if response.Success then
       self.items = response.Data
+      self.hasNextPage = #response.Data == self.pageSize
     else
       print(response.ErrorMessage)
+    end
+  end,
+  HandleNextPage = function(self)
+    if self.hasNextPage then
+      self.pageNumber = self.pageNumber + 1
+      request.fetchInboxItems(self.pageSize, self.pageNumber)
+    end
+  end,
+  HandlePreviousPage = function(self)
+    if self.pageNumber > 1 then
+      self.pageNumber = self.pageNumber - 1
+      request.fetchInboxItems(self.pageSize, self.pageNumber)
+    end
+  end,
+  HandlePageNumberInput = function(self, pageNumber)
+    self.pageNumber = pageNumber
+    request.fetchInboxItems(self.pageSize, self.pageNumber)
+  end,
+  CollectInboxItems = function(self)
+    if #self.items > 0 then
+      local ids = {}
+      for i, item in ipairs(self.items) do
+        ids[i] = item.Id
+      end
+      request.collectInboxItems(ids)
+      if self.pageNumber > 0 then
+        self.pageNumber = self.pageNumber - 1
+      end
     end
   end
 })
 
 local onInboxNotification = utils.debounce(function()
   print("[InboxItems] -> InboxNotificationResponse Event Handler")
-  request.fetchInboxItems();
+  request.fetchInboxItems(state.pageSize, state.pageNumber);
 end, 3000)
 
 local OpCodeHandlers = {
@@ -31,7 +63,7 @@ local OpCodeHandlers = {
   [0x10007] = onInboxNotification,
   [0x10008] = function(evt)
     print("[InboxItems] -> CollectInboxItemsResponse Event Handler")
-    request.fetchInboxItems();
+    request.fetchInboxItems(state.pageSize, state.pageNumber);
   end
 }
 
@@ -42,7 +74,7 @@ local onMount = function()
       OpCodeHandlers[evt.OpCode](evt)
     end
   end)
-  request.fetchInboxItems()
+  request.fetchInboxItems(state.pageSize, state.pageNumber);
 end
 
 local InboxListItemInfo = function(item)
@@ -94,15 +126,37 @@ end
 
 local InboxItemsPagination = function(state)
   return rx:Div({ class = "inbox-items-pagination" }, {
+    rx:Input({
+      type = "text",
+      value = state.pageNumber,
+      onChange = function(evt) state.HandlePageNumberInput(tonumber(evt.Params.value)) end
+    }),
     rx:Button({
-      class = "primary inbox-items-collect-all",
-      onClick = function()
-        if not state.collectingInboxItems then
-          request.collectInboxItems();
-        end
-      end
-    }, "Collect All")
+      disabled = state.pageNumber <= 1,
+      class = {
+        ["post-auction-listings-pagination-previous"] = true,
+        ["primary"] = true
+      },
+      onClick = function() state.HandlePreviousPage() end
+    }, "Previous"),
+    rx:Button({
+      disabled = not state.hasNextPage,
+      class = {
+        ["post-auction-listings-pagination-next"] = true,
+        ["primary"] = true
+      },
+      onClick = function() state.HandleNextPage() end
+    }, "Next")
   })
+end
+
+local InboxItemsCollect = function(state)
+  return rx:Button({
+    class = "primary inbox-items-collect-all",
+    onClick = function()
+      state.CollectInboxItems()
+    end
+  }, "Collect All")
 end
 
 local InboxView = function(state)
@@ -112,7 +166,8 @@ local InboxView = function(state)
     onMount = onMount
   }, {
     InboxItems(state),
-    InboxItemsPagination(state)
+    InboxItemsPagination(state),
+    InboxItemsCollect(state),
   })
 end
 
