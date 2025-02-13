@@ -97,7 +97,7 @@ local state = rx:CreateState({
   end,
 })
 
-local onDragOver = utils.debounce(function(evt)
+local onDragOver = function(evt)
   state.isDragging = true
   state.allowDragging = evt.Params.IsSpell == false
   state.dragError = ""
@@ -114,12 +114,12 @@ local onDragOver = utils.debounce(function(evt)
       return
     end
   end
-end, 300)
+end
 
-local onDragOut = utils.debounce(function()
+local onDragOut = function()
   state.isDragging = false
   state.dragError = ""
-end, 300)
+end
 
 
 local PostFormItemDrop = function(state)

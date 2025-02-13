@@ -49,7 +49,6 @@ local state = rx:CreateState({
       error("Invalid sort direction. Direction must be either 1 (ascending) or 2 (descending).")
     end
 
-
     self.sortDirection = self[columnDirectionKey]
     self.pageNumber = 1
     request.fetchPostListings(
@@ -94,16 +93,16 @@ local state = rx:CreateState({
   end
 })
 
-local onGetPostListingsResponse = utils.debounce(function(evt)
+local onGetPostListingsResponse = function(evt)
   print("[PostAuctionListings] -> GetPostListingsResponse Event Handler")
   local getPostListingsResponse = request.read(evt.RawData)
   state.HandleGetPostListingsResponse(getPostListingsResponse)
-end, 500)
+end
 
-local onInboxNotificationResponse = utils.debounce(function()
+local onInboxNotificationResponse = function()
   print("[PostAuctionListings] -> InboxNotificationResponse Event Handler")
   state.HandleInboxNotificationReponse()
-end, 500)
+end
 
 local OpCodeHandlers = {
   [0x10004] = onGetPostListingsResponse,
