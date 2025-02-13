@@ -31,18 +31,16 @@
 
       #post {
         display: flex;
-        width: 70vw;
+        width: 80vw;
         height: 60vh;
       }
 
       #inbox {
-        display: flex;
         width: 30vw;
         height: 60vh;
       }
 
       .inbox-container {
-        display: flex;
         padding: 1rem;
         width: 100%;
         height: 100%;
@@ -61,7 +59,6 @@
       }
 
       .inbox-list-item {
-        display: flex;
         margin-bottom: 0.5rem;
         gap: 1rem;
         border-radius: 0.85rem;
@@ -82,55 +79,114 @@
       }
       
       .post-auction-form {
-        display: flex;
-        width: 25%;
+        flex: 1.25;
         padding: 1rem;
         border-right: 1px #eea300dd;
       }
 
-      .post-auction-listings {
+      .post-form {
         display: flex;
         width: 100%;
+        height: 100%;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .post-form-item-container h4 {
+        margin-bottom: 0.5rem;
+      }
+
+      .post-form-item {
+        width: 100%;
+      }
+
+      .post-form-item > * {
+        display: inline-block;
+        text-align: center;
+        vertical-align: center;
+        margin-right: 0.5rem;
+      }
+
+      .post-form-item-container button {
+      }
+
+      button.post-form-submit  {
+        width: 100%;
+      }
+
+      
+
+      .post-form input[type="text"] {
+        width: 5rem;
+        align-self: center;
+      }
+
+      .post-auction-listings {
+        flex: 3;
         padding: 1rem;
+        height: 100%;
       }
 
       .post-auction-listings-container {
-        display: flex;
+        position: relative;
+        height: 100%;
+        width: 100%;
         flex-direction: column;
       }
 
-      .post-auction-listings-search {
+      .post-auction-listings-controls {
+        padding: 1rem;
         display: flex;
         align-items: center;
-        padding: 1rem;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+      }
+
+      .post-auction-listings-search {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .post-auction-listings-pagination {
+        flex: 1;
+        display: flex;
+        align-items: center;
         justify-content: flex-end;
+        gap: 0.5rem;
+      }
+
+      .post-auction-listings-pagination button {
+        width: 30%;
+      }
+
+      .post-auction-listings-pagination > * {
+        
       }
 
       .post-auction-listings-list {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        top: 7rem;
         overflow: auto;
-        height: 80%;
       }
 
       .post-auction-listings-table {
         padding: 0 1rem;
       }
 
-      .post-auction-listings-pagination, .inbox-items-pagination {
+      .inbox-items-pagination {
         margin-top: auto;
-        display: flex;
         justify-content: flex-end;
-        width: 100%;
         padding: 1rem 0;
         padding-bottom: 0;
         gap: 0.5rem;
       }
 
-      .post-auction-listings-pagination button {
-        width: 15%;
-      }
-
       .post-auction-listings-pagination input[type="text"] {
-        width: 5%;
+        width: 10%;
       }
       
       .post-auction-listings-table {
@@ -148,7 +204,6 @@
       }
 
       .post-auction-listings-list-container {
-        display: flex;
         flex-direction: column;
       }
 
@@ -180,7 +235,6 @@
       }
 
       .post-auction-listings-item-name-container {
-        display: flex;
         align-items: center;
         justify-content: space-between;
       }
@@ -217,38 +271,7 @@
         color: red;
       }
 
-      .post-form {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-      }
-
-      .post-form-item-container {
-        display: flex;
-        flex-direction: column;
-        border-radius: 0.85rem;
-        gap: 0.5rem;
-      }
-
-      .post-form-item-container button {
-      }
-
-      button.post-form-submit  {
-        width: 100%;
-      }
-
-      .post-form-item {
-        flex-grow: 0;
-        display: flex;
-        align-items: center;
-        height: 2.5rem;
-        gap: 0.5rem;
-      }
-
-      .post-form input[type="text"] {
-        width: 5rem;
-        align-self: center;
-      }
+      
       
       .icon-stack-label {
         align-self: center;
@@ -307,7 +330,6 @@
       }
 
       .post-auction-browse {
-        display: flex;
         flex-direction: column;
         text-align: left;
         padding: 1rem;

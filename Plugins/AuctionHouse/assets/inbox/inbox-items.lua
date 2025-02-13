@@ -42,7 +42,7 @@ local state = rx:CreateState({
         ids[i] = item.Id
       end
       request.collectInboxItems(ids)
-      if self.pageNumber > 0 then
+      if self.pageNumber > 1 then
         self.pageNumber = self.pageNumber - 1
       end
     end

@@ -8,7 +8,7 @@ local state = rx:CreateState({
   loading = true,
   listings = nil,
   auctionError = "",
-  pageSize = 25,
+  pageSize = 5,
   pageNumber = 1,
   hasNextPage = true,
   sortColumn = "name",
@@ -325,6 +325,13 @@ local AuctionListingsSearch = function(state)
   })
 end
 
+local AuctionListingsControls = function(state)
+  return rx:Div({ class = "post-auction-listings-controls" }, {
+    AuctionListingsSearch(state),
+    AuctionListingsPagination(state)
+  })
+end
+
 local AuctionListings = function(state)
   print("RENDERED AUCTION LISTINGS")
   return rx:Div({
@@ -333,9 +340,8 @@ local AuctionListings = function(state)
     onUnmount = onUnmount
   }, {
     AuctionListingsTitle(state),
-    AuctionListingsSearch(state),
+    AuctionListingsControls(state),
     AuctionListingsList(state),
-    AuctionListingsPagination(state)
   })
 end
 
